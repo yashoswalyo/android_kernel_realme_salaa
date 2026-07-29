@@ -705,12 +705,28 @@ static inline void __range_cloexec(struct files_struct *cur_fds,
 static inline void __range_close(struct files_struct *cur_fds, unsigned int fd,
 				 unsigned int max_fd)
 {
+	struct fdtable *fdt;
+
+	/*
+	 * Cap max_fd to the actual fdtable size. close_range(3, UINT_MAX, 0)
+	 * is a common pattern (systemd does this), and iterating 4 billion
+	 * times through empty slots without cond_resched() creates an
+	 * unkillable spin loop — SIGKILL stays pending but is never delivered
+	 * because the process never returns to user space.
+	 */
+	rcu_read_lock();
+	fdt = files_fdtable(cur_fds);
+	max_fd = min(max_fd, last_fd(fdt));
+	rcu_read_unlock();
+
 	while (fd <= max_fd) {
 		struct file *file;
 
 		file = pick_file(cur_fds, fd++);
-		if (!file)
+		if (!file) {
+			cond_resched();
 			continue;
+		}
 
 		filp_close(file, cur_fds);
 		cond_resched();
