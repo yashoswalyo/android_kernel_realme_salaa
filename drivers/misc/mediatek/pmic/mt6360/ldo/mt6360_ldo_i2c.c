@@ -801,12 +801,24 @@ static int mt6360_ldo_i2c_probe(struct i2c_client *client,
 			ret = PTR_ERR(mli->rdev[i]);
 			goto out_pdata;
 		}
-		/* allow change mode */
+		/* allow change mode, voltage, and status */
 		constraints = (mli->rdev[i])->constraints;
-		constraints->valid_ops_mask |= REGULATOR_CHANGE_MODE;
+		constraints->valid_ops_mask |= REGULATOR_CHANGE_MODE
+					     | REGULATOR_CHANGE_VOLTAGE
+					     | REGULATOR_CHANGE_STATUS;
 		constraints->valid_modes_mask = REGULATOR_MODE_NORMAL |
 						REGULATOR_MODE_IDLE |
 						REGULATOR_MODE_STANDBY;
+		/* DTBO may lock VMC/VMCH to a fixed voltage, but the
+		 * MSDC driver needs to switch between 3.3V and 1.8V
+		 * for SD card signaling. Widen to match hardware. */
+		if (i == MT6360_LDO_LDO3) {
+			constraints->min_uV = 1200000;
+			constraints->max_uV = 3600000;
+		} else if (i == MT6360_LDO_LDO5) {
+			constraints->min_uV = 2700000;
+			constraints->max_uV = 3600000;
+		}
 	}
 	mt6360_ldo_irq_register(mli);
 	dev_info(&client->dev, "%s: successfully probed\n", __func__);
