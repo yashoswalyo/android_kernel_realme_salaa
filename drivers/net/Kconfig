@@ -274,8 +274,8 @@ config MACSEC
 config NETCONSOLE
 	tristate "Network console logging support"
 	---help---
-	If you want to log kernel messages over the network, enable this.
-	See <file:Documentation/networking/netconsole.txt> for details.
+	  If you want to log kernel messages over the network, enable this.
+	  See <file:Documentation/networking/netconsole.txt> for details.
 
 config NETCONSOLE_DYNAMIC
 	bool "Dynamic reconfiguration of logging targets"

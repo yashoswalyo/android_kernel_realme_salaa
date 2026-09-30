@@ -319,6 +319,8 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 		kalMemCopy(prWdev,
 			gprP2pWdev[u4Idx],
 			sizeof(struct wireless_dev));
+		/* Let cfg80211 assign a unique ID when registering the netdev. */
+		prWdev->identifier = 0;
 		prWdev->netdev = prNewNetDevice;
 		prWdev->iftype = type;
 		prNewNetDevice->ieee80211_ptr = prWdev;

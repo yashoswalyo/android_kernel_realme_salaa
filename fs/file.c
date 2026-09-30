@@ -723,16 +723,25 @@ static inline void __range_close(struct files_struct *cur_fds, unsigned int fd,
 		struct file *file;
 
 		file = pick_file(cur_fds, fd++);
-		if (!IS_ERR(file)) {
-			/* found a valid file to close */
-			filp_close(file, cur_fds);
+		if (IS_ERR(file)) {
+			/* beyond the last fd in that table */
+			if (PTR_ERR(file) == -EINVAL)
+				return;
+
+			/*
+			 * -EBADF: empty slot. close_range(3, UINT_MAX, 0) is a
+			 * common pattern (systemd does this), so we must
+			 * cond_resched() here too, or iterating through a large
+			 * run of empty slots becomes an unkillable spin loop -
+			 * SIGKILL stays pending but is never delivered because
+			 * the process never returns to user space.
+			 */
 			cond_resched();
 			continue;
 		}
 
-		/* beyond the last fd in that table */
-		if (PTR_ERR(file) == -EINVAL)
-			return;
+		filp_close(file, cur_fds);
+		cond_resched();
 	}
 }
 
