@@ -538,7 +538,7 @@
 #define CFG_RX_MAX_BA_TID_NUM                   8
 #define CFG_RX_REORDERING_ENABLED               1
 
-#define CFG_PF_ARP_NS_MAX_NUM                   3
+#define CFG_PF_ARP_NS_MAX_NUM                   10
 
 #define CFG_COMPRESSION_DEBUG			0
 #define CFG_DECOMPRESSION_TMP_ADDRESS		0

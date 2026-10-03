@@ -219,6 +219,7 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 	struct MSG_P2P_ACTIVE_DEV_BSS *prMsgActiveBss = NULL;
 	struct mt66xx_chip_info *prChipInfo;
 	struct wireless_dev *prOrigWdev = NULL;
+	uint32_t u4FirstRole = 0;
 
 	do {
 		P2P_WIPHY_PRIV(wiphy, prGlueInfo);
@@ -229,7 +230,18 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 		prAdapter = prGlueInfo->prAdapter;
 		prChipInfo = prAdapter->chip_info;
 
-		for (u4Idx = 0; u4Idx < KAL_P2P_NUM; u4Idx++) {
+		/* In dual-AP mode, start_ap silently skips role 0 when STA is
+		 * connected and the concurrency policy removes one SAP. Allocate
+		 * the virtual AP on role 1, which can beacon alongside the STA.
+		 */
+		if (type == NL80211_IFTYPE_AP &&
+		    prAdapter->rWifiVar.fgSapConcurrencyPolicy ==
+			P2P_CONCURRENCY_POLICY_REMOVE &&
+		    aisGetConnectedBssInfo(prAdapter) &&
+		    p2pFuncIsDualAPMode(prAdapter))
+			u4FirstRole = 1;
+
+		for (u4Idx = u4FirstRole; u4Idx < KAL_P2P_NUM; u4Idx++) {
 			prP2pInfo = prGlueInfo->prP2PInfo[u4Idx];
 			/* Expect that only create the new dev with the p2p0 */
 			if (prP2pInfo == NULL)
